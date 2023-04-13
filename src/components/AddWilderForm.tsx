@@ -1,23 +1,41 @@
 import axios from "axios";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { useWilders } from "../contexts/WildersContext";
+import { gql, useMutation } from "@apollo/client";
+
+const ADD_WILDER = gql`
+  mutation AddWilder($city: String!, $name: String!) {
+    addWilder(city: $city, name: $name) {
+      name
+      city
+      id
+    }
+  }
+`;
 
 export default function AddWilderForm() {
   const { fetchData } = useWilders();
   const [name, setName] = useState<string>("");
-
+  const [city, setCity] = useState<string>("");
+  const [addWilder, { loading }] = useMutation(ADD_WILDER);
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setName(event.target.value);
+    if (event.target.id === "city") {
+      setCity(event.target.value);
+    } else {
+      setName(event.target.value);
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    await axios.post("http://localhost:5000/api/wilders", {
-      name,
+    await addWilder({
+      variables: { name, city },
     });
     fetchData();
+    setName("");
+    setCity("");
   };
 
   return (
@@ -32,7 +50,17 @@ export default function AddWilderForm() {
           onChange={handleChange}
         />
       </div>
-      <button>Submit</button>
+      <div>
+        <label htmlFor="city">city</label>
+        <input
+          id="city"
+          type="text"
+          placeholder="Paris"
+          value={city}
+          onChange={handleChange}
+        />
+      </div>
+      <button disabled={loading}>{loading ? "Submitting..." : "Submit"}</button>
     </form>
   );
 }

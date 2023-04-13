@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import IWilder from "../interfaces/IWilder";
+import { gql, useQuery } from "@apollo/client";
 
 interface WildersContextProps {
   wilders: IWilder[];
@@ -16,18 +17,26 @@ interface WildersProviderProps {
   children?: React.ReactNode;
 }
 
+const GET_WILDERS = gql`
+  query GetAllWilders {
+    getAllWilders {
+      id
+      name
+      city
+      skills {
+        id
+        name
+      }
+    }
+  }
+`;
+
 export function WildersProvider({ children }: WildersProviderProps) {
-  const [wilders, setWilders] = useState<IWilder[]>([]);
-
+  const { data, refetch } = useQuery(GET_WILDERS);
+  const wilders = data?.getAllWilders || [];
   const fetchData = async () => {
-    const result = await axios.get("http://localhost:5000/api/wilders");
-
-    setWilders(result.data);
+    await refetch();
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   return (
     <WildersContext.Provider value={{ wilders, fetchData }}>
